@@ -1,8 +1,10 @@
-````md
+
+````markdown
 # 🕵️ AskJeffrey
 
-A **Retrieval-Augmented Generation (RAG)** pipeline for querying the **Jeffrey Epstein Files** using AI — built on the **Epstein Files 20K** dataset from Hugging Face.  
-Dataset: https://huggingface.co/datasets/teyler/epstein-files-20k
+A **Retrieval-Augmented Generation (RAG)** pipeline for querying the **Jeffrey Epstein Files** using AI — built on the **Epstein Files 20K** dataset from Hugging Face.
+
+- Dataset: https://huggingface.co/datasets/teyler/epstein-files-20k
 
 > 🔗 **Live Demo:** *(coming soon)*
 
@@ -39,6 +41,7 @@ Dataset: https://huggingface.co/datasets/teyler/epstein-files-20k
 ### Four Stages (Simple Pipeline)
 
 #### Stage 1 — Data Preparation *(offline, run once)*
+
 ```text
 Raw Documents (2.5M lines)
         ↓
