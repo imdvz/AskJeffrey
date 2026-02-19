@@ -236,6 +236,3 @@ Licensed under the **MIT License** — see `LICENSE`.
 
 Built for **research, transparency, and educational purposes**.
 All data is sourced from public records. Users are responsible for complying with applicable laws and ethical guidelines.
-
-```
-```
