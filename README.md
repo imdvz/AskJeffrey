@@ -1,5 +1,4 @@
 
-````markdown
 # 🕵️ AskJeffrey
 
 A **Retrieval-Augmented Generation (RAG)** pipeline for querying the **Jeffrey Epstein Files** using AI — built on the **Epstein Files 20K** dataset from Hugging Face.
@@ -50,7 +49,7 @@ Clean & Reconstruct
 Semantic Chunking
         ↓
 Vector Embeddings + BM25 Index
-````
+```
 
 #### Stage 2 — Hybrid Retrieval
 
