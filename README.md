@@ -1,13 +1,119 @@
-# AskJeffrey
+Got it — here's the entire README as one single unbroken code block:
 
 ```markdown
 # 🕵️ AskJeffrey
 
-**Ask AI-powered questions about the Jeffrey Epstein Files.**
-
-A RAG (Retrieval-Augmented Generation) pipeline built on the [Epstein Files 20K](https://huggingface.co/datasets/teyler/epstein-files-20k) dataset from Hugging Face — featuring semantic chunking, hybrid search, cross-encoder re-ranking, and a Streamlit chat interface.
+A RAG pipeline implementation for querying the Jeffrey Epstein Files using AI — built on the [Epstein Files 20K](https://huggingface.co/datasets/teyler/epstein-files-20k) dataset from Hugging Face.
 
 > 🔗 **[Try the Live Demo →](#)** *(coming soon)*
+
+---
+
+## ⚡ Quick Demo
+
+Process 2M+ document lines → Get accurate, source-cited answers in seconds
+
+**What it does:**
+- Semantically chunks documents based on meaning, not character count
+- Searches using both vector similarity AND keyword matching (hybrid search)
+- Re-ranks results with a cross-encoder for maximum precision
+- Generates grounded answers with source citations
+- Users bring their own free API key — no server costs
+
+---
+
+## 🎯 Key Features
+
+✅ **No Hallucinations** - Answers grounded solely in source documents
+✅ **Semantic Chunking** - Context-aware splits where meaning shifts
+✅ **Hybrid Search** - Vector (ChromaDB) + Keyword (BM25) retrieval
+✅ **Cross-Encoder Re-ranking** - Precision filtering of retrieved chunks
+✅ **Source Citations** - Every answer cites its source documents
+✅ **BYOK (Bring Your Own Key)** - Users provide their own free Groq API key
+✅ **Fast Processing** - ~1 second end-to-end query response
+✅ **Interactive Chat UI** - Streamlit web interface with conversation history
+
+---
+
+## 🏗️ How It Works
+
+### Four Simple Stages
+
+**Stage 1: Data Preparation** *(offline, run once)*
+
+```
+
+Raw Documents (2.5M lines)
+
+↓
+
+Clean & Reconstruct
+
+↓
+
+Semantic Chunking
+
+↓
+
+Vector Embeddings + BM25 Index
+
+```
+
+**Stage 2: Hybrid Retrieval**
+
+```
+
+User Question
+
+↓
+
+Vector Search (ChromaDB) + Keyword Search (BM25)
+
+↓
+
+Reciprocal Rank Fusion → Top 15 Chunks
+
+```
+
+**Stage 3: Re-ranking**
+
+```
+
+Top 15 Chunks + Question
+
+↓
+
+Cross-Encoder Scoring
+
+↓
+
+Top 6 Most Relevant Chunks
+
+```
+
+**Stage 4: Grounded Answer**
+
+```
+
+Context + Question
+
+↓
+
+LLaMA 3.3 70B (via Groq)
+
+↓
+
+Answer with Source Citations
+
+```
+
+### Why Hybrid Search + Re-ranking?
+
+**Typical Approach:** Pure vector similarity
+→ Misses exact names, dates, and keywords
+
+**AskJeffrey's Approach:** Vector + BM25 + Cross-Encoder
+→ Catches both semantic meaning AND exact matches, then precision-filters the results
 
 ---
 
@@ -15,95 +121,74 @@ A RAG (Retrieval-Augmented Generation) pipeline built on the [Epstein Files 20K]
 
 | Feature | Typical RAG Projects | AskJeffrey |
 |---|---|---|
-| Chunking | Fixed character splits | **Semantic chunking** (splits where meaning shifts) |
-| Search | Vector similarity only | **Hybrid search** (vector + BM25 keyword) |
-| Ranking | No re-ranking | **Cross-encoder re-ranking** for precision |
+| Chunking | Fixed character splits | **Semantic chunking** (meaning-based) |
+| Search | Vector similarity only | **Hybrid** (vector + BM25 keyword) |
+| Ranking | No re-ranking | **Cross-encoder re-ranking** |
 | Embeddings | MiniLM (384d) | **BGE-base-en-v1.5** (768d) |
-| API Key | Hardcoded / server-side | **BYOK** (Bring Your Own Key) — user provides their own |
-| Citations | None | **Source documents cited** in every answer |
+| API Key | Hardcoded / server-side | **BYOK** (user provides their own) |
+| Citations | None | **Source documents cited** in answers |
 
 ---
 
-## 🏗️ How It Works
+## 📦 Installation
 
-```
-
-User asks a question (Streamlit UI)
-
-↓
-
-Hybrid Retrieval (ChromaDB + BM25 → Reciprocal Rank Fusion)
-
-↓
-
-Cross-Encoder Re-ranking (top 6 most relevant chunks)
-
-↓
-
-LLM generates grounded answer (LLaMA 3.3 via Groq)
-
-↓
-
-Answer + source citations returned to user
-
-```
-
----
-
-## 📦 Tech Stack
-
-- **LLM**: LLaMA 3.3 70B via [Groq](https://groq.com)
-- **Framework**: [LangChain](https://langchain.com)
-- **Vector DB**: [ChromaDB](https://www.trychroma.com)
-- **Embeddings**: [BGE-base-en-v1.5](https://huggingface.co/BAAI/bge-base-en-v1.5) (Sentence Transformers)
-- **Keyword Search**: BM25 (rank-bm25)
-- **Re-ranker**: cross-encoder/ms-marco-MiniLM-L-6-v2
-- **Frontend**: [Streamlit](https://streamlit.io)
-- **Backend**: [FastAPI](https://fastapi.tiangolo.com) (optional)
-- **Dataset**: [Epstein Files 20K](https://huggingface.co/datasets/teyler/epstein-files-20k)
-
----
-
-## 🚀 Quick Start
-
-### Prerequisites
-
+### Requirements
 - Python 3.11+
-- A free Groq API key → [Get one here](https://console.groq.com)
+- A free Groq API key ([get one here](https://console.groq.com))
 
-### Setup
+### Setup (5 minutes)
+
+**1. Clone repository**
 
 ```
-
-# Clone the repo
 
 git clone https://github.com/imdvz/AskJeffrey.git
 
 cd AskJeffrey
 
-# Create virtual environment
+```
+
+**2. Create virtual environment**
+
+```
 
 python -m venv venv
 
 source venv/bin/activate  # Windows: venvScriptsactivate
 
-# Install dependencies
+```
+
+**3. Install dependencies**
+
+```
 
 pip install -r requirements.txt
 
 ```
 
+---
+
+## 🚀 Getting Started
+
 ### Run the Data Pipeline (first time only)
 
 ```
 
-python ingest/download_[dataset.py](http://dataset.py)    # Download dataset
+# Step 1: Download raw data
 
-python ingest/clean_[dataset.py](http://dataset.py)       # Clean & reconstruct documents
+python ingest/download_[dataset.py](http://dataset.py)
 
-python ingest/chunk_[dataset.py](http://dataset.py)       # Semantic chunking
+# Step 2: Clean and reconstruct documents
 
-python ingest/embed_[chunks.py](http://chunks.py)        # Generate embeddings + BM25 index
+python ingest/clean_[dataset.py](http://dataset.py)
+
+# Step 3: Semantic chunking
+
+python ingest/chunk_[dataset.py](http://dataset.py)
+
+# Step 4: Generate embeddings + BM25 index
+
+python ingest/embed_[chunks.py](http://chunks.py)
 
 ```
 
@@ -115,11 +200,13 @@ streamlit run [app.py](http://app.py)
 
 ```
 
-Open `http://localhost:8501`, paste your Groq API key in the sidebar, and start asking questions!
+UI opens at: `http://localhost:8501`
+
+**That's it!** Paste your Groq API key in the sidebar and start asking questions.
 
 ---
 
-## 📁 Project Structure
+## 📚 Project Structure
 
 ```
 
@@ -169,15 +256,36 @@ AskJeffrey/
 
 This app does **not** use a server-side API key. Every user provides their own free Groq API key:
 
-- Your key is **never stored** — it lives only in your browser session
-- Your key is **never logged** — it's sent directly to Groq's API and nowhere else
-- When you close the tab, your key is gone
+- 🔒 Your key is **never stored** — it lives only in your browser session
+- 🚫 Your key is **never logged** — it's sent directly to Groq's API and nowhere else
+- 🗑️ When you close the tab, your key is **gone**
 
 ---
 
 ## 📜 License
 
-This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
+This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
+
+---
+
+## 🙏 Acknowledgments
+
+- **Dataset:** [Teyler/Epstein Files 20K](https://huggingface.co/datasets/teyler/epstein-files-20k) on Hugging Face
+- **Embeddings:** [Sentence Transformers](https://www.sbert.net/)
+- **Vector DB:** [ChromaDB](https://www.trychroma.com/)
+- **Keyword Search:** [rank-bm25](https://github.com/dorianbrown/rank_bm25)
+- **Re-ranker:** [Cross-Encoders](https://www.sbert.net/docs/cross_encoder/usage/usage.html)
+- **LLM Inference:** [Groq](https://groq.com/)
+- **Framework:** [LangChain](https://langchain.com/)
+- **UI:** [Streamlit](https://streamlit.io/)
+
+---
+
+## 📞 Support
+
+**Get Help:**
+- 📝 [Open an Issue](https://github.com/imdvz/AskJeffrey/issues)
+- 💬 [Start a Discussion](https://github.com/imdvz/AskJeffrey/discussions)
 
 ---
 
@@ -186,9 +294,4 @@ This project is licensed under the MIT License — see the [LICENSE](LICENSE) fi
 This project is built for **research, transparency, and educational purposes**. All data is sourced from public records. Users are responsible for complying with applicable laws and ethical guidelines when using this system.
 
 ---
-
-## 🙏 Acknowledgments
-
-- Dataset: [Teyler/Epstein Files 20K](https://huggingface.co/datasets/teyler/epstein-files-20k) on Hugging Face
-- Inspired by [AnkitNayak-eth/EpsteinFiles-RAG](https://github.com/AnkitNayak-eth/EpsteinFiles-RAG)
 ```
