@@ -28,13 +28,13 @@ EMBEDDING_MODEL_NAME = "BAAI/bge-base-en-v1.5"
 # ──────────────────────────────────────
 # Chunking
 # ──────────────────────────────────────
-MAX_CHUNK_SIZE = 1000
-MIN_DOC_LENGTH = 100
+MAX_CHUNK_SIZE = 1100
+MIN_DOC_LENGTH = 120
 
 # ──────────────────────────────────────
 # Embedding Batch
 # ──────────────────────────────────────
-EMBED_BATCH_SIZE = 1000
+EMBED_BATCH_SIZE = 64
 
 # ──────────────────────────────────────
 # Retrieval
