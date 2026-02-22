@@ -39,8 +39,8 @@ EMBED_BATCH_SIZE = 64
 # ──────────────────────────────────────
 # Retrieval
 # ──────────────────────────────────────
-VECTOR_FETCH_K = 40
-BM25_FETCH_K = 40
+VECTOR_FETCH_K = 80 # Increased from 40 to 80 to provide more candidates for RRF re-ranking
+BM25_FETCH_K = 80 # Increased from 40 to 80 to provide more candidates for RRF re-ranking
 HYBRID_TOP_K = 15
 RRF_K = 60
 
