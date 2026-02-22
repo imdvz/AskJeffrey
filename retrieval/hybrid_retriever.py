@@ -13,20 +13,6 @@ RRF — How it works:
   Each result gets a score based on its RANK (position) in each list, not its raw score.
   Formula: RRF_score = 1 / (rank + k)   where k=60 (a smoothing constant)
 
-  Example:
-    Chunk A: Rank 1 in ChromaDB, Rank 5 in BM25
-      → RRF = 1/(1+60) + 1/(5+60) = 0.0164 + 0.0154 = 0.0318
-
-    Chunk B: Rank 3 in ChromaDB, Rank 2 in BM25
-      → RRF = 1/(3+60) + 1/(2+60) = 0.0159 + 0.0161 = 0.0320
-
-    Chunk B wins! It ranked well in BOTH lists, making it more likely to be relevant.
-
-  Why ranks instead of raw scores?
-    - ChromaDB scores and BM25 scores are on completely different scales
-    - You can't directly compare 0.87 (cosine similarity) with 23.5 (BM25 score)
-    - Ranks normalize everything to a fair playing field
-
 Input:  User's query string
 Output: Top-K merged chunks ready for re-ranking
 
@@ -34,26 +20,96 @@ Dependencies: chroma_db/ and data/bm25_index.pkl from Step 9
 """
 
 import json
-import os
 import pickle
-import sys
+import re
 
-from langchain_chroma import Chroma
 from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_chroma import Chroma
 from rank_bm25 import BM25Okapi
 
+import os
+import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from config import (  # noqa: E402
-    BM25_CHUNKS_PATH,
-    BM25_FETCH_K,
-    BM25_INDEX_PATH,
-    CHROMA_COLLECTION_NAME,
+from config import (
     CHROMA_DIR,
+    CHROMA_COLLECTION_NAME,
     EMBEDDING_MODEL_NAME,
+    BM25_INDEX_PATH,
+    BM25_CHUNKS_PATH,
+    VECTOR_FETCH_K,
+    BM25_FETCH_K,
     HYBRID_TOP_K,
     RRF_K,
-    VECTOR_FETCH_K,
+
+    # new config knobs
+    ENABLE_ISLAND_QUERY_EXPANSION,
+    ISLAND_EXPANSION_TERMS,
+    ISLAND_INTENT_KEYWORDS,
+    ISLAND_INTENT_VERBS,
+
+    ENABLE_IDENTIFIER_BOOST,
+    IDENTIFIER_PATTERNS,
+    DENSE_WEIGHT_DEFAULT,
+    SPARSE_WEIGHT_DEFAULT,
+    DENSE_WEIGHT_IDENTIFIER,
+    SPARSE_WEIGHT_IDENTIFIER,
 )
+
+
+def _normalize(s: str) -> str:
+    return (s or "").lower().strip()
+
+
+# Compile identifier patterns once
+_IDENTIFIER_REGEXES = [re.compile(p) for p in IDENTIFIER_PATTERNS]
+
+
+def is_identifier_query(query: str) -> bool:
+    """
+    Heuristic: if query matches common identifier formats (tail numbers, doc IDs, exhibit IDs),
+    prefer BM25 dominance.
+    """
+    q = query or ""
+    for rx in _IDENTIFIER_REGEXES:
+        if rx.search(q):
+            return True
+    return False
+
+
+def is_island_intent(query: str) -> bool:
+    """
+    Only expand BM25 query when island intent is implied.
+    Rules:
+    - If any island keyword appears -> True
+    - Else if 'epstein' appears AND any travel/visit verb appears -> True
+    """
+    q = _normalize(query)
+
+    # Direct island keyword triggers
+    for kw in ISLAND_INTENT_KEYWORDS:
+        if kw in q:
+            return True
+
+    # Implied island intent: Epstein + visit/travel verbs
+    if "epstein" in q:
+        for v in ISLAND_INTENT_VERBS:
+            if v in q:
+                return True
+
+    return False
+
+
+def expand_query_for_bm25(query: str) -> str:
+    """
+    Append island expansion terms ONLY when island intent is implied.
+    """
+    if not ENABLE_ISLAND_QUERY_EXPANSION:
+        return query
+
+    if is_island_intent(query):
+        extra = " ".join(ISLAND_EXPANSION_TERMS)
+        return f"{query} {extra}"
+    return query
 
 
 class HybridRetriever:
@@ -79,10 +135,10 @@ class HybridRetriever:
 
         # ─── Sparse retriever (BM25) ─────────────────────
         print("📚 Loading BM25 index...")
-        with open(BM25_INDEX_PATH, "rb") as f:
+        with open(BM25_INDEX_PATH, 'rb') as f:
             self.bm25_index: BM25Okapi = pickle.load(f)
 
-        with open(BM25_CHUNKS_PATH, "r", encoding="utf-8") as f:
+        with open(BM25_CHUNKS_PATH, 'r', encoding='utf-8') as f:
             self.bm25_chunks: list = json.load(f)
 
         print(f"✅ BM25 loaded: {len(self.bm25_chunks):,} chunks indexed")
@@ -98,9 +154,9 @@ class HybridRetriever:
 
         return [
             {
-                "text": doc.page_content,
-                "metadata": doc.metadata,
-                "source": "dense",
+                'text': doc.page_content,
+                'metadata': doc.metadata,
+                'source': 'dense',
             }
             for doc in results
         ]
@@ -112,8 +168,11 @@ class HybridRetriever:
         Tokenizes the query and scores every chunk based on term frequency
         and inverse document frequency. Returns the top K scoring chunks.
         """
+        # Expand query ONLY when island intent is implied
+        expanded_query = expand_query_for_bm25(query)
+
         # Tokenize the query the same way we tokenized the corpus (lowercase + split)
-        query_tokens = query.lower().split()
+        query_tokens = expanded_query.lower().split()
 
         # Get BM25 scores for all chunks
         scores = self.bm25_index.get_scores(query_tokens)
@@ -123,10 +182,10 @@ class HybridRetriever:
 
         return [
             {
-                "text": self.bm25_chunks[i]["text"],
-                "metadata": self.bm25_chunks[i]["metadata"],
-                "source": "sparse",
-                "bm25_score": float(scores[i]),
+                'text': self.bm25_chunks[i]['text'],
+                'metadata': self.bm25_chunks[i]['metadata'],
+                'source': 'sparse',
+                'bm25_score': float(scores[i]),
             }
             for i in top_indices
             if scores[i] > 0  # skip chunks with zero relevance
@@ -137,48 +196,42 @@ class HybridRetriever:
         dense_results: list[dict],
         sparse_results: list[dict],
         k: int = RRF_K,
+        dense_weight: float = DENSE_WEIGHT_DEFAULT,
+        sparse_weight: float = SPARSE_WEIGHT_DEFAULT,
     ) -> list[dict]:
         """
-        Merge dense and sparse results using Reciprocal Rank Fusion (RRF).
+        Merge dense and sparse results using Reciprocal Rank Fusion (RRF),
+        with optional weighting.
 
-        Instead of comparing raw scores (which are on different scales),
-        RRF uses the RANK of each result. A chunk that appears high in
-        both lists gets a higher combined score than one that's high in
-        only one list.
-
-        The 'k' parameter (default 60) controls how much we favor top-ranked
-        results vs. lower-ranked ones. Higher k = more equal weighting.
+        RRF uses rank-based scoring to avoid mixing incompatible raw score scales.
+        We optionally weight dense vs sparse contributions.
         """
-        # We use the chunk text as the unique key for merging
-        # (two results with the same text are the same chunk)
         fused_scores = {}  # text → cumulative RRF score
-        chunk_map = {}  # text → chunk data (for returning later)
+        chunk_map = {}     # text → chunk data
 
         # Score dense results by their rank
         for rank, result in enumerate(dense_results):
-            text = result["text"]
-            rrf_score = 1.0 / (rank + k)
+            text = result['text']
+            rrf_score = dense_weight * (1.0 / (rank + k))
             fused_scores[text] = fused_scores.get(text, 0) + rrf_score
             chunk_map[text] = result
 
         # Score sparse results by their rank
         for rank, result in enumerate(sparse_results):
-            text = result["text"]
-            rrf_score = 1.0 / (rank + k)
+            text = result['text']
+            rrf_score = sparse_weight * (1.0 / (rank + k))
             fused_scores[text] = fused_scores.get(text, 0) + rrf_score
-            # If this chunk wasn't in dense results, add it to the map
             if text not in chunk_map:
                 chunk_map[text] = result
 
         # Sort by fused RRF score (highest first)
         sorted_texts = sorted(fused_scores.keys(), key=lambda t: fused_scores[t], reverse=True)
 
-        # Build the final list with RRF scores attached
         fused_results = []
         for text in sorted_texts:
             chunk = chunk_map[text].copy()
-            chunk["rrf_score"] = fused_scores[text]
-            chunk["source"] = "hybrid"
+            chunk['rrf_score'] = fused_scores[text]
+            chunk['source'] = 'hybrid'
             fused_results.append(chunk)
 
         return fused_results
@@ -188,18 +241,31 @@ class HybridRetriever:
         Main entry point: run hybrid search and return the top K merged results.
 
         Flow:
-        1. Run dense search (ChromaDB) → top 40 by meaning
-        2. Run sparse search (BM25)    → top 40 by keywords
-        3. Merge with RRF              → top 15 best of both worlds
+        1. Run dense search (ChromaDB)
+        2. Run sparse search (BM25) with optional island query expansion
+        3. Merge with weighted RRF (BM25 dominates for identifier-like queries)
         """
         # Step 1: Get results from both search methods
         dense_results = self._search_dense(query)
         sparse_results = self._search_sparse(query)
 
-        # Step 2: Merge using RRF
-        fused_results = self._reciprocal_rank_fusion(dense_results, sparse_results)
+        # Step 2: Decide weights (identifier queries -> BM25 dominates)
+        dense_w = DENSE_WEIGHT_DEFAULT
+        sparse_w = SPARSE_WEIGHT_DEFAULT
 
-        # Step 3: Return the top K
+        if ENABLE_IDENTIFIER_BOOST and is_identifier_query(query):
+            dense_w = DENSE_WEIGHT_IDENTIFIER
+            sparse_w = SPARSE_WEIGHT_IDENTIFIER
+
+        # Step 3: Merge using weighted RRF
+        fused_results = self._reciprocal_rank_fusion(
+            dense_results,
+            sparse_results,
+            dense_weight=dense_w,
+            sparse_weight=sparse_w,
+        )
+
+        # Step 4: Return the top K
         return fused_results[:top_k]
 
 
@@ -207,7 +273,7 @@ class HybridRetriever:
 # Quick test — run this file directly to verify it works
 # ──────────────────────────────────────────────────────
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     retriever = HybridRetriever()
 
     test_queries = [
@@ -224,7 +290,5 @@ if __name__ == "__main__":
         results = retriever.retrieve(query, top_k=5)
 
         for i, r in enumerate(results):
-            print(
-                f"\n--- Result {i+1} (RRF: {r['rrf_score']:.4f}) [{r['metadata']['source_file']}] ---"
-            )
-            print(r["text"][:200])
+            print(f"\n--- Result {i+1} (RRF: {r['rrf_score']:.4f}) [{r['metadata']['source_file']}] ---")
+            print(r['text'][:200])

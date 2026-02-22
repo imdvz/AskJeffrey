@@ -72,3 +72,78 @@ DEFAULT_PROVIDER = "OpenRouter"
 # ──────────────────────────────────────
 LLM_TEMPERATURE = 0
 LLM_MAX_TOKENS = 500
+
+# ──────────────────────────────────────
+# Query Intent + Hybrid Weighting
+# ──────────────────────────────────────
+
+# Enable/disable island query expansion for BM25
+ENABLE_ISLAND_QUERY_EXPANSION = True
+
+# Terms we append to BM25 queries ONLY when "island intent" is implied
+ISLAND_EXPANSION_TERMS = [
+    "island",
+    "st james",
+    "st. james",
+    "little st james",
+    "great st james",
+    "virgin islands",
+    "u.s. virgin islands",
+    "usvi",
+    "st thomas",
+    "caribbean",
+]
+
+# If any of these appear, we consider "island intent" implied
+ISLAND_INTENT_KEYWORDS = [
+    "island",
+    "st james",
+    "st. james",
+    "little st james",
+    "great st james",
+    "virgin islands",
+    "u.s. virgin islands",
+    "usvi",
+    "st thomas",
+    "caribbean",
+]
+
+# If "epstein" appears AND any of these verbs appear, we consider island intent implied
+ISLAND_INTENT_VERBS = [
+    "visit",
+    "visited",
+    "visiting",
+    "guest",
+    "guests",
+    "went",
+    "travel",
+    "traveled",
+    "fly",
+    "flew",
+    "flight",
+    "stayed",
+    "stay",
+    "staying",
+    "trip",
+    "villa",
+    "compound",
+]
+
+# Enable/disable identifier query boost (BM25 dominates)
+ENABLE_IDENTIFIER_BOOST = True
+
+# Identifier patterns (tail numbers, exhibit IDs, doc IDs, etc.)
+IDENTIFIER_PATTERNS = [
+    r"\b[A-Z]\d{3}[A-Z]{2}\b",      # e.g., N908JE-like variants (user-provided pattern)
+    r"\bN\d{3,6}[A-Z]{0,3}\b",      # e.g., N908JE, N2123, N123AB
+    r"\b[A-Z]{1,4}-\d{2,8}\b",      # e.g., JE-1045, EX-12, DOC-2020
+    r"\b\d{2,4}-\d{2,6}\b",         # e.g., 0124-0420
+]
+
+# Default RRF weights
+DENSE_WEIGHT_DEFAULT = 1.0
+SPARSE_WEIGHT_DEFAULT = 1.0
+
+# Weights for identifier-like queries (BM25 should dominate)
+DENSE_WEIGHT_IDENTIFIER = 0.5
+SPARSE_WEIGHT_IDENTIFIER = 2.0
