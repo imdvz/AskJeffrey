@@ -100,6 +100,7 @@ pydeck==0.9.1
 Pygments==2.19.2
 PyPika==0.51.1
 pyproject_hooks==1.2.0
+pysqlite3==0.6.0
 python-dateutil==2.9.0.post0
 python-dotenv==1.2.1
 pytz==2025.2
