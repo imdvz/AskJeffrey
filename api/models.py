@@ -1,5 +1,5 @@
 """
-Step 13: Pydantic data models for the API layer.
+Pydantic data models for the API layer.
 
 These models define the exact shape of data flowing through the app:
 - What the user sends (QueryRequest)
