@@ -310,9 +310,9 @@ if __name__ == '__main__':
         sys.exit(1)
 
     test_queries = [
-        "Who visited Epstein's island?",
+        "Approximately, How many people visited Epstein's island?",
         "What did Maxwell say in her deposition?",
-        "Tell me about the flight logs.",
+        "Tell me about the flight logs for flight N909JE.",
     ]
 
     for query in test_queries:
