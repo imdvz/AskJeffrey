@@ -18,7 +18,7 @@ A **Retrieval-Augmented Generation (RAG)** pipeline for querying the **Jeffrey E
 - Hybrid retrieval: **vector similarity + keyword matching**
 - Cross-encoder **re-ranking** for precision
 - Grounded answers with **source citations**
-- **BYOK (Bring Your Own Key):** users provide their own free Groq API key
+- **BYOK (Bring Your Own Key):** users provide their own free OpenAI API key
 
 ---
 
@@ -76,7 +76,7 @@ Top 6 Most Relevant Chunks
 ```text
 Context + Question
         ↓
-LLaMA 3.3 70B (via Groq)
+gpt-oss-120b (via OpenRouter)
         ↓
 Answer with Source Citations
 ```
@@ -111,7 +111,7 @@ Answer with Source Citations
 ### Requirements
 
 * Python **3.11+**
-* A free **Groq API key**: [https://console.groq.com](https://console.groq.com)
+* A free **OpenAI API key**: [https://openrouter.ai/](https://openrouter.ai/)
 
 ### Setup (5 minutes)
 
@@ -163,7 +163,7 @@ streamlit run app.py
 
 Open: `http://localhost:8501`
 
-Paste your **Groq API key** in the sidebar and start asking questions.
+Paste your **OpenAI API key** in the sidebar and start asking questions.
 
 ---
 
@@ -199,7 +199,7 @@ AskJeffrey/
 
 ## 🔐 Bring Your Own Key (BYOK)
 
-This app does **not** use a server-side API key. Every user provides their own free Groq API key:
+This app does **not** use a server-side API key. Every user provides their own free OpenAI API key:
 
 * 🔒 Key is **not stored** (browser session only)
 * 🚫 Key is **not logged**
@@ -221,7 +221,7 @@ Licensed under the **MIT License** — see `LICENSE`.
 * **Vector DB:** ChromaDB — [https://www.trychroma.com/](https://www.trychroma.com/)
 * **Keyword Search:** rank-bm25 — [https://github.com/dorianbrown/rank_bm25](https://github.com/dorianbrown/rank_bm25)
 * **Re-ranking:** Cross-Encoders — [https://www.sbert.net/docs/cross_encoder/usage/usage.html](https://www.sbert.net/docs/cross_encoder/usage/usage.html)
-* **LLM Inference:** Groq — [https://groq.com/](https://groq.com/)
+* **LLM Inference:** OpenAI (gpt-oss-120b) — [https://openrouter.ai/](https://openrouter.ai/)
 * **Framework:** LangChain — [https://langchain.com/](https://langchain.com/)
 * **UI:** Streamlit — [https://streamlit.io/](https://streamlit.io/)
 
